@@ -27,9 +27,19 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+CELERY_BEAT_SCHEDULE = {
+    'detect-anomalies-every-10-minutes': {
+        'task': 'ip_tracking.task.detect_anomalies',
+        'schedule': 600.0,  # Every 10 minutes
+    },
+}
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -38,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'ip_tracking',  # Your app for IP tracking
+    'django_celery_beat',  # For periodic tasks
 ]
 
 MIDDLEWARE = [
@@ -50,6 +61,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'ip_tracking.middleware.IPTrackingMiddleware',  # Custom middleware for IP tracking
 ]
+
+# Rate limit settings
+RATELIMIT_ENABLE = True
+RATELIMIT_CACHE_PREFIX = 'rl:'
+RATELIMIT_USE_CACHE = 'default'
 
 ROOT_URLCONF = 'ip_tracking.urls'
 
@@ -122,3 +138,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cache_table',
+    }
+}
